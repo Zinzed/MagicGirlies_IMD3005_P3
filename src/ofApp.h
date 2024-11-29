@@ -1,10 +1,14 @@
 #pragma once
 
 #include "ofMain.h"
+#include "timer.h"
 
 class ofApp : public ofBaseApp{
 
 	public:
+
+		Timer m_timer; 
+
 		void setup();
 		void update();
 		void draw();
