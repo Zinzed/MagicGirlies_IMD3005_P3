@@ -2,17 +2,21 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-
+    
+    m_timer.setText("generalText.ttf", 50.0f);
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
 
+    m_timer.update();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-
+    
+    ofSetColor(255);
+    m_timer.drawText();
 }
 
 //--------------------------------------------------------------
@@ -69,3 +73,4 @@ void ofApp::gotMessage(ofMessage msg){
 void ofApp::dragEvent(ofDragInfo dragInfo){ 
 
 }
+
