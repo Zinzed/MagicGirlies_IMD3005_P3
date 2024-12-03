@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "timer.h"
+using namespace std;
 
 class ofApp : public ofBaseApp{
 
@@ -24,5 +25,8 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
+
+		vector<ofVec2f> starPositions;
+		vector<float> starSizes;
 		
 };
