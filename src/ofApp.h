@@ -2,13 +2,16 @@
 
 #include "ofMain.h"
 #include "timer.h"
+#include "enemyBehaviour.h"
+
 using namespace std;
 
 class ofApp : public ofBaseApp{
 
 	public:
 
-		Timer m_timer; 
+		Timer m_timer;
+		EnemyBehaviour m_enemies;
 
 		void setup();
 		void update();
