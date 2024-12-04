@@ -6,6 +6,7 @@ void ofApp::setup(){
     m_timer.setText("generalText.ttf", 50.0f);
     cursor.load("magicWand.png");
     star.load("star.png");
+    m_enemies.loadEnemies("green-enemy.png", "blue-enemy.png", "pink-enemy.png");
 }
 
 //--------------------------------------------------------------
