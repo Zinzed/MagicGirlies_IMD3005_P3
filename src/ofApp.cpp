@@ -50,6 +50,9 @@ void ofApp::setup(){
     //timer
     m_timer.setText("generalText.ttf", 50.0f);
 
+    //enemies
+    m_enemies.loadEnemies("green-enemy.png", "blue-enemy.png", "pink-enemy.png");
+
     //debug view
     m_showDebugView = false;
 
