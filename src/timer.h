@@ -1,18 +1,19 @@
 #pragma once
 
 #include "ofMain.h"
+#include "CVC.h"
 
 class Timer
 {
-    private:
-        float m_time;
+private:
+    float m_time;
 
-        ofTrueTypeFont m_timerText;
+    ofTrueTypeFont m_timerText;
 
-        int m_minutes;
+    int m_minutes;
 
-    public:
-        void setText(string textPath, float size);
-        void drawText();
-        void update();
+public:
+    void setText(string textPath, float size);
+    void drawText();
+    void update();
 };
