@@ -12,5 +12,5 @@ void Timer::setText(string textPath, float size)
 
 void Timer::drawText()
 {
-    m_timerText.drawString("time: " + ofToString(m_time), 9 * ofGetWindowWidth() / 10, 80.0f);
+    m_timerText.drawString("time: " + ofToString(m_time), 9 * CVC::APP_WINDOW_WIDTH / 10, 80.0f);
 }
