@@ -10,4 +10,5 @@ class EnemyBehaviour
     public:
         void loadEnemies(string enemy1, string enemy2, string enemey3);
         void enemyActions();
+        int randNum();
 };
