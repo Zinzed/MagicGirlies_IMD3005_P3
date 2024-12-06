@@ -49,6 +49,7 @@ void ofApp::setup(){
 
     //timer
     m_timer.setText("generalText.ttf", 50.0f);
+    m_timer.setTimerUI("timer.png");
 
     //enemies
     m_enemies.loadEnemies("green-enemy.png", "blue-enemy.png", "pink-enemy.png");
@@ -180,17 +181,17 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
 
+    ofPushMatrix();
+    {
+        ofSetColor(255);
+        // ofTransform();
+        ofScale(2, 2);
+        m_skyBg.draw(0, 0);
+        
+    }ofPopMatrix();
+
     // draw timer
     m_timer.drawText();
-
-    ofPushMatrix();
-
-    ofSetColor(255);
-   // ofTransform();
-    ofScale(2, 2);
-    m_skyBg.draw(0,0);
-
-    ofPopMatrix();
    
 
     if (m_showDebugView) {
