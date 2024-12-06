@@ -12,8 +12,11 @@ private:
 
     int m_minutes;
 
+    ofImage m_timerUI;
+
 public:
     void setText(string textPath, float size);
+    void setTimerUI(string textPath);
     void drawText();
     void update();
 };
