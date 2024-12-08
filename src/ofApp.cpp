@@ -47,12 +47,57 @@ void ofApp::setup() {
     waveCount = 0;
     maxWaves = 10;
 
+    //start screen and instructions screen
+    m_showStart = true;
+    m_showInstruc = false;
+    m_showInstrucP2 = false;
+    m_showEnd = false;
+    m_backgrounds.setBgs("startScreen.png", "instructionsP1.png", "instructionsP2.png", "timesUp.png");
+
+    //start screen button images
+    m_startBtn.load("startBefore.png");
+    m_startBtn.resize(750, 310);
+    m_instrucBtn.load("instructionsBefore.png");
+
+    //instructions pages button images
+    m_backBtn.load("back.png");
+    m_backBtn.resize(175, 175); 
+    m_nextBtn.load("next.png");
+    m_nextBtn.resize(200, 200);
+    m_startAltBtn.load("startAlt.png");
+    m_startAltBtn.resize(175, 175);
+
+    //button bounding boxes
+    m_startBB.set(250, 350, 750, 210);
+    m_instrucBB.set(250, 630, m_instrucBtn.getWidth(), m_instrucBtn.getHeight() - 100);
+    m_nextBB.set(1600, 400, 200, 200);
+    m_backBB.set(775, 775, 175, 175);
+    m_startAltBB.set(1000, 775, 175, 175);
+    m_restartBB.set(875, 450, 175, 175);
+
+    //music 
+    m_loopUI = true;
+    m_uiMusic.load("uiMusic.mp3");
+    m_uiMusic.setLoop(m_loopUI);
+    m_uiMusic.setVolume(0.8);
+    m_uiMusic.play();
+
+    m_loopGP = true;
+    m_gpMusic.load("gameplayMusic.mp3");
+    m_gpMusic.setLoop(m_loopGP);
+    m_gpMusic.setVolume(0.6);
+
     //timer
     m_timer.setText("generalText.ttf", 50.0f);
     m_timer.setTimerUI("timer.png");
 
-    //enemies
+    //enemies and score
+    m_enemies.setup();
     m_enemies.loadEnemies("green-enemy.png", "blue-enemy.png", "pink-enemy.png");
+    m_enemies.loadScoreUI("score.png");
+    m_enemyDeath.load("enemyDeath.mp3");
+    m_enemies.loadScoreText("generalText.ttf", 50.0f);
+    m_enemyRespawn.load("respawn.mp3");
 
     //debug view
     m_showDebugView = false;
@@ -183,8 +228,27 @@ void ofApp::update() {
         }
     }
 
-    // update the timer
-    m_timer.update();
+    // update the timer if in gameplay
+    if (!m_showStart && !m_showInstruc && !m_showInstrucP2)
+    {
+        if (!m_timer.timerIsRunning)
+        {
+            m_timer.startTime();
+        }
+        m_timer.update();
+        //end game if timer is greater than 1 minute
+        if (m_timer.m_time >= 60)
+        {
+            m_showEnd = true;
+            m_showStart = false;
+            m_showInstruc = false;
+            m_showInstrucP2 = false;
+        }
+    }
+    else
+    {
+        m_timer.timerIsRunning = false;
+    }
 
     //CODE FOR CURSOR WAND STARS
     //generates the random positions
@@ -208,139 +272,212 @@ void ofApp::update() {
     ofLogNotice() << "r: " << static_cast<int>(std::round(m_trackedColor[2] * 255));
     ofLogNotice() << "g: " << static_cast<int>(std::round(m_trackedColor[2] * 255));
     ofLogNotice() << "b: " << static_cast<int>(std::round(m_trackedColor[2] * 255));
+
+    //gameplay music
+    if (m_playGPMus && !m_gpMusic.isPlaying())
+    {
+        m_gpMusic.play();
+    }
 }
 
 
 //--------------------------------------------------------------
 void ofApp::draw() {
 
-    ofPushMatrix();
-
-    ofSetColor(255);
-    ofScale(2, 2);
-    m_skyBg.draw(0, 0);
-
-    ofPopMatrix();
-
-
-    ofPushMatrix();
-
-    // draw timer
-    m_timer.drawText();
-
-    ofPopMatrix();
-
-
-    if (m_showDebugView) {
-
-        //draw videos
-        ofSetColor(255, 255, 255);
-        m_grayscaleDiffImage.draw(CVC::VIDEO_BORDER_SIZE, CVC::VIDEO_BORDER_SIZE);
-        m_colorImage.draw(CVC::VIDEO_WIDTH + CVC::VIDEO_BORDER_SIZE * 2.0f, CVC::VIDEO_BORDER_SIZE);
-
-
-        //draw contours
-        static ofVec2f contourCenter;
-        static float contourArea;
-
-        ofPushMatrix();
-        {
-            ofTranslate(CVC::VIDEO_BORDER_SIZE, CVC::VIDEO_BORDER_SIZE);
-
-            //loop through blobs and draw them with some debug info.
-            for (int i = 0; i < m_contourFinder.nBlobs; i++) {
-                contourCenter.set(m_contourFinder.blobs[i].boundingRect.getCenter().x,
-                    m_contourFinder.blobs[i].boundingRect.getCenter().y);
-                contourArea = m_contourFinder.blobs[i].area;
-
-                //draw contour
-                m_contourFinder.blobs[i].draw();
-
-                //draw center
-                ofSetColor(ofColor::coral);
-                ofDrawCircle(contourCenter.x, contourCenter.y, 5.0f);
-
-                //draw text info.
-                ofDrawBitmapString("Centre: " + ofToString(contourCenter.x) + "," + ofToString(contourCenter.y),
-                    m_contourFinder.blobs[i].boundingRect.getMaxX() + CVC::VIDEO_BORDER_SIZE,
-                    contourCenter.y);
-                ofDrawBitmapString("Area: " + ofToString(contourArea),
-                    m_contourFinder.blobs[i].boundingRect.getMaxX() + CVC::VIDEO_BORDER_SIZE,
-                    contourCenter.y + 20.0f);
-            }
-        }
-        ofPopMatrix();
-
-        //draw gui
-        m_gui.begin();
-        {
-            ImGui::Text("OpenCV Color Lesson");
-            ImGui::SliderInt("Threshold", &m_threshold, 0, 255);
-            ImGui::SliderInt("Num of Contours", &m_numContoursConsidered, 0, 30);
-            ImGui::SliderFloat("Min. Area", &m_minArea, 0.0f, (float)(CVC::VIDEO_WIDTH * CVC::VIDEO_HEIGHT));
-            ImGui::SliderFloat("Max. Area", &m_maxArea, 0.0f, (float)(CVC::VIDEO_WIDTH * CVC::VIDEO_HEIGHT));
-
-            ImGui::Separator(); //you've got to keep them separated
-
-            ImGui::Text("\n Please select app state, thank you! Or not ... in that case, no thank you!");
-            static int currentListBoxIndex = 0;
-            if (ofxImGui::VectorCombo("App Mode", &currentListBoxIndex, m_appModes)) {
-                m_appMode = (CVC::APP_MODE)currentListBoxIndex;
-            }
-            ImGui::ColorEdit3("Selected Color", (float*)m_trackedColor);
-            ImGui::Text("\n Instructions: \npress spacebar to toggle pause \nright-click on video to select colour");
-        }
-        m_gui.end();
-    }
-
-    //CODE FOR CURSOR WAND STARS
-        //sets the max desired size
-    star.resize(50, 50);
-
-    //draws the stars
-    for (int i = 0; i < starPositions.size(); i++) {
-
-        float size = starSizes[i];
-
-        ofPushMatrix();
+    if (m_showStart && !m_showInstruc && !m_showInstrucP2 && !m_showEnd)
+    {
         ofSetColor(255);
-        ofTranslate(starPositions[i]);
-        ofScale(size / 100.0, size / 100.0);
-        star.draw(-star.getWidth() / 2, -star.getHeight() / 2);
+        m_backgrounds.drawStart();
+        m_startBtn.draw(250, 350);
+        m_instrucBtn.draw(270, 600);
+    }
+    else if (m_showInstruc && !m_showStart && !m_showInstrucP2 && !m_showEnd)
+    {   
+        ofSetColor(255);
+        m_backgrounds.drawInstrucP1();
+        m_nextBtn.draw(1600, 400);
+    }
+    if (!m_showStart && !m_showInstruc && m_showInstrucP2 && !m_showEnd)
+    {
+        m_backgrounds.drawInstrucP2();
+        m_backBtn.draw(775, 775);
+        m_startAltBtn.draw(1000, 775);
 
+    }
+
+    if (!m_showStart && !m_showInstruc && !m_showInstrucP2 && !m_showEnd)
+    {
+        m_loopUI = false;
+        m_uiMusic.stop();
+
+        ofPushMatrix();
+        {
+            ofSetColor(255);
+            // ofTransform();
+            ofScale(2, 2);
+            m_skyBg.draw(0, 0);
+        }ofPopMatrix();
+
+        //draw score
+        ofPushMatrix();
+        {
+            m_enemies.drawScoreUI();
+
+        }ofPopMatrix();
+
+        ofPushMatrix();
+        {
+            m_enemies.drawScore();
+
+        }ofPopMatrix();
+
+        // draw timer
+        ofPushMatrix();
+        {
+            ofSetColor(255);
+            m_timer.drawText();
+
+        }ofPopMatrix();
+
+        ofPushMatrix();
+        {
+            ofSetColor(255);
+            m_enemies.enemyActions();
+
+        }ofPopMatrix();
+
+        if (m_showDebugView) {
+    
+            //draw videos
+            ofSetColor(255, 255, 255);
+            m_grayscaleDiffImage.draw(CVC::VIDEO_BORDER_SIZE, CVC::VIDEO_BORDER_SIZE);
+            m_colorImage.draw(CVC::VIDEO_WIDTH + CVC::VIDEO_BORDER_SIZE * 2.0f, CVC::VIDEO_BORDER_SIZE);
+    
+    
+            //draw contours
+            static ofVec2f contourCenter;
+            static float contourArea;
+    
+            ofPushMatrix();
+            {
+                ofTranslate(CVC::VIDEO_BORDER_SIZE, CVC::VIDEO_BORDER_SIZE);
+    
+                //loop through blobs and draw them with some debug info.
+                for (int i = 0; i < m_contourFinder.nBlobs; i++) {
+                    contourCenter.set(m_contourFinder.blobs[i].boundingRect.getCenter().x,
+                        m_contourFinder.blobs[i].boundingRect.getCenter().y);
+                    contourArea = m_contourFinder.blobs[i].area;
+    
+                    //draw contour
+                    m_contourFinder.blobs[i].draw();
+    
+                    //draw center
+                    ofSetColor(ofColor::coral);
+                    ofDrawCircle(contourCenter.x, contourCenter.y, 5.0f);
+    
+                    //draw text info.
+                    ofDrawBitmapString("Centre: " + ofToString(contourCenter.x) + "," + ofToString(contourCenter.y),
+                        m_contourFinder.blobs[i].boundingRect.getMaxX() + CVC::VIDEO_BORDER_SIZE,
+                        contourCenter.y);
+                    ofDrawBitmapString("Area: " + ofToString(contourArea),
+                        m_contourFinder.blobs[i].boundingRect.getMaxX() + CVC::VIDEO_BORDER_SIZE,
+                        contourCenter.y + 20.0f);
+                }
+            }
+            ofPopMatrix();
+    
+            //draw gui
+            m_gui.begin();
+            {
+                ImGui::Text("OpenCV Color Lesson");
+                ImGui::SliderInt("Threshold", &m_threshold, 0, 255);
+                ImGui::SliderInt("Num of Contours", &m_numContoursConsidered, 0, 30);
+                ImGui::SliderFloat("Min. Area", &m_minArea, 0.0f, (float)(CVC::VIDEO_WIDTH * CVC::VIDEO_HEIGHT));
+                ImGui::SliderFloat("Max. Area", &m_maxArea, 0.0f, (float)(CVC::VIDEO_WIDTH * CVC::VIDEO_HEIGHT));
+    
+                ImGui::Separator(); //you've got to keep them separated
+    
+                ImGui::Text("\n Please select app state, thank you! Or not ... in that case, no thank you!");
+                static int currentListBoxIndex = 0;
+                if (ofxImGui::VectorCombo("App Mode", &currentListBoxIndex, m_appModes)) {
+                    m_appMode = (CVC::APP_MODE)currentListBoxIndex;
+                }
+                ImGui::ColorEdit3("Selected Color", (float*)m_trackedColor);
+                ImGui::Text("\n Instructions: \npress spacebar to toggle pause \nright-click on video to select colour");
+            }
+            m_gui.end();
+        }
+
+    if (!m_showStart && !m_showInstruc && !m_showInstrucP2 && m_showEnd)
+    {
+        m_gpMusic.stop();
+
+        m_backgrounds.drawEnd();
+
+        ofPushMatrix();
+        {
+            m_enemies.drawScoreUI();
+
+        }ofPopMatrix();
+
+        ofPushMatrix();
+        {
+            m_enemies.drawScore();
+
+        }ofPopMatrix();
+
+    }
+    
+        //CODE FOR CURSOR WAND STARS
+            //sets the max desired size
+        star.resize(50, 50);
+    
+        //draws the stars
+        for (int i = 0; i < starPositions.size(); i++) {
+    
+            float size = starSizes[i];
+    
+            ofPushMatrix();
+            ofSetColor(255);
+            ofTranslate(starPositions[i]);
+            ofScale(size / 100.0, size / 100.0);
+            star.draw(-star.getWidth() / 2, -star.getHeight() / 2);
+    
+            ofPopMatrix();
+        }
+    
+        cursor.draw(ofGetMouseX() - 50, ofGetMouseY() - 60);
+        cursor.resize(100, 100);
+    
+        //draw the waves
+    
+        ofPushMatrix();
+    
+        for (const Wave& wave : waves) {
+    
+            drawWaves(wave);
+        }
+    
         ofPopMatrix();
-    }
-
-    cursor.draw(ofGetMouseX() - 50, ofGetMouseY() - 60);
-    cursor.resize(100, 100);
-
-    //draw the waves
-
-    ofPushMatrix();
-
-    for (const Wave& wave : waves) {
-
-        drawWaves(wave);
-    }
-
-    ofPopMatrix();
-
-    //enemy showing with flex sensor
-    // Check if the flex sensor value exceeds the threshold
-    if (flexVal > 2) {
-        flexMode = true;
-    }
-    else if (flexVal == 0) {
-        flexMode = false;
-    }
-
-    if (flexMode == true) {
-        m_enemies.enemyActions();
-    }
-
-    ofSetColor(255);
-    ofDrawBitmapString("Flex Value: " + ofToString(flexVal), 20, 20);
-
+    
+        //enemy showing with flex sensor
+        // Check if the flex sensor value exceeds the threshold
+        if (flexVal > 2) {
+            flexMode = true;
+        }
+        else if (flexVal == 0) {
+            flexMode = false;
+        }
+    
+        if (flexMode == true) {
+            m_enemies.enemyActions();
+        }
+    
+        ofSetColor(255);
+        ofDrawBitmapString("Flex Value: " + ofToString(flexVal), 20, 20);
+    
+        }
+        
 }
 
 //--------------------------------------------------------------
@@ -368,6 +505,21 @@ void ofApp::keyPressed(int key) {
     }
     if (key == 'd') {
         m_showDebugView = !m_showDebugView; //toggle the debug visibility
+    }
+
+    //this will be the wand logic
+    if (key == 'k')
+    {
+        m_enemyDeath.play();
+        m_enemies.isDead = true;
+        m_enemies.m_score++;
+    }
+    //this will be the flex sensor logic
+    if (key == 'f')
+    {
+        m_enemyRespawn.play();
+        m_enemies.generateNew();
+        m_enemies.isDead = false;
     }
 }
 
@@ -456,6 +608,41 @@ void ofApp::AutoTrackColor(ofxCvColorImage& image, ColorRange cr1, ColorRange cr
 
     //find contours/blobs
     m_contourFinder.findContours(m_grayscaleDiffImage, m_minArea, m_maxArea, m_numContoursConsidered, false, true);
+
+    //button logic
+    if (m_startBB.inside(x, y) || m_startAltBB.inside(x, y))
+    {
+        m_buttonClick.play();
+        m_showStart = false;
+        m_showInstruc = false;
+        m_showInstrucP2 = false;
+        m_playGPMus = true;
+        m_showEnd = false;
+    }
+    else if (m_instrucBB.inside(x, y) || m_backBB.inside(x, y))
+    {
+        m_buttonClick.play();
+        m_showInstruc = true;
+        m_showStart = false;
+        m_showInstrucP2 = false;
+        m_showEnd = false;
+    }
+    else if (m_nextBB.inside(x, y))
+    {
+        m_buttonClick.play();
+        m_showInstruc = false;
+        m_showStart = false;
+        m_showInstrucP2 = true;
+        m_showEnd = false;
+    }
+    else if (m_restartBB.inside(x, y))
+    {
+        m_buttonClick.play();
+        m_showInstruc = false;
+        m_showStart = true;
+        m_showInstrucP2 = false;
+        m_showEnd = false;
+    }
 }
 
 void ofApp::drawWaves(const Wave& wave) {
