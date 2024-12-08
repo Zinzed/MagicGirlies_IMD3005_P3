@@ -9,6 +9,7 @@
 #include "CVC.h"
 #include "enemyBehaviour.h"
 #include "ofEvents.h"
+#include "backgrounds.h"
 
 
 using namespace std;
@@ -33,6 +34,39 @@ public:
 	static const int PIN_BLUE = 3;
 	int PIN_BUTTON = 2;
 
+	//different screens
+	Backgrounds m_backgrounds;
+	ofImage m_startScreen;
+	ofImage m_instructionScreenP1;
+
+	//button images
+	ofImage m_startBtn;
+	ofImage m_instrucBtn;
+	ofImage m_backBtn;
+	ofImage m_backBtnNo2;
+	ofImage m_nextBtn;
+	ofImage m_startAltBtn;
+
+	//screen tracking
+	bool m_showStart;
+	bool m_showInstruc;
+	bool m_showInstrucP2;
+	bool m_playGPMus;
+	bool m_showEnd;
+
+	//button bounding boxes
+	ofRectangle m_startBB;
+	ofRectangle m_instrucBB;
+	ofRectangle m_backBB;
+	ofRectangle m_nextBB;
+	ofRectangle m_startAltBB;
+	ofRectangle m_restartBB;
+
+	//music
+	ofSoundPlayer m_uiMusic;
+	bool m_loopUI;
+	ofSoundPlayer m_gpMusic;
+	bool m_loopGP;
 
 	Timer m_timer;
 	EnemyBehaviour m_enemies;
@@ -68,8 +102,6 @@ public:
 	float m_previousContourArea; //previous contour area
 	float m_farThreshold; //"far" area
 	float m_closeThreshold; //"close" area
-
-	ofSoundPlayer m_magicSound;
 
 	ofImage cursor;
 	ofImage star;
@@ -138,5 +170,10 @@ public:
 
 	ofImage blueEnemy;
 
+	//sound effects
+	ofSoundPlayer m_magicSound;
+	ofSoundPlayer m_buttonClick;
+	ofSoundPlayer m_enemyDeath;
+	ofSoundPlayer m_enemyRespawn;
 
 };
