@@ -1,8 +1,19 @@
 #include "timer.h"
 
+void Timer::startTime()
+{
+    if (!timerIsRunning)
+    {
+        m_startTime = ofGetElapsedTimeMillis() / 1000.0f;
+        timerIsRunning = true;
+    }
+}
 void Timer::update()
 {
-    m_time = ofGetElapsedTimeMillis() / 1000.0f;
+    if (timerIsRunning)
+    {
+        m_time = (ofGetElapsedTimeMillis() / 1000.0f) - m_startTime;
+    }
 }
 
 void Timer::setText(string textPath, float size)
