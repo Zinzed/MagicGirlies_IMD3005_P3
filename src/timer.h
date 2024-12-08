@@ -6,17 +6,20 @@
 class Timer
 {
 private:
-    float m_time;
+
+    float m_startTime;
 
     ofTrueTypeFont m_timerText;
-
-    int m_minutes;
 
     ofImage m_timerUI;
 
 public:
+    float m_time;
+    bool timerIsRunning;
+    bool timeUp; 
     void setText(string textPath, float size);
     void setTimerUI(string textPath);
     void drawText();
+    void startTime();
     void update();
 };
