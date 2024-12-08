@@ -26,7 +26,7 @@ class ofApp : public ofBaseApp{
 		bool m_videoResolutionConflict;		//do we need to re-size our video before we process?
 		bool m_camResolutionConflict;		//do we need to re-size our video before we process?
 		bool m_camPaused;					//pausing our camera feed
-		
+
 		ofxCvContourFinder m_contourFinder;
 
 		//CV images
@@ -58,21 +58,35 @@ class ofApp : public ofBaseApp{
 		ofImage star;
 		ofImage m_skyBg;
 
-		// Struct to represent a wave with no methods
-		struct Wave {
-			ofVec2f position; // Position of the wave
-			float radius;     // Current radius of the wave
-			float opacity;    // Current opacity of the wave
-			float maxRadius;  // Maximum radius before the wave is "dead"
+		//struct for tracked color range
+		struct ColorRange {
+			int minR, maxR;
+			int minG, maxG;
+			int minB, maxB;
 		};
 
-		// Wave management
+		// Struct to represent a wave with no methods
+		struct Wave {
+			ofVec2f position; //position of the wave
+			float radius;     //current radius of the wave
+			float opacity;    //current opacity of the wave
+			float maxRadius;  //maximum radius before the wave is "dead"
+			ofColor color;	//color of the wave 
+		};
+
+		//define color ranges
+		ColorRange pinkRange = { 187, 249, 45, 199, 114, 244 };
+		ColorRange greenRange = { 0, 92, 191, 231, 88, 149 };
+		ColorRange blueRange = { 37, 119, 54, 166, 196, 247 };
+
+		//wave management
 		vector<Wave> waves;
-		float waveInterval;   // Time interval between waves
-		float lastWaveTime;   // Timestamp of the last wave
-		bool stopWaves;       // Flag to stop adding waves
-		int waveCount;        // Current number of waves created
-		int maxWaves;         // Maximum number of waves allowed
+		float waveInterval;   //time interval between waves
+		float lastWaveTime;   //timestamp of the last wave
+		bool stopWaves;       //flag to stop adding waves
+		int waveCount;        //current number of waves created
+		int maxWaves;         //maximum number of waves allowed
+		
 
 		void setup();
 		void update();
@@ -83,11 +97,12 @@ class ofApp : public ofBaseApp{
 
 		//we will do all color CV processing here
 		//we are passing a reference here ...
-		void processColor(ofxCvColorImage& image);
+		void AutoTrackColor(ofxCvColorImage& image, ColorRange cr1, ColorRange cr2, ColorRange cr3);
+		void drawWaves(const Wave& wave);
 
 		bool m_showDebugView;
 
-		
+
 		vector<ofVec2f> starPositions;
 		vector<float> starSizes;
 };
