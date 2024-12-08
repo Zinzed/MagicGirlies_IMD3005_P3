@@ -41,22 +41,21 @@ void ofApp::setup() {
     m_magicSound.load("magic-spell.mp3");
 
     //wave effect
-    waveInterval = 500;  //time between waves in milliseconds
+    waveInterval = 500;  // Time between waves in milliseconds
     lastWaveTime = 0;
     stopWaves = false;
     waveCount = 0;
     maxWaves = 10;
 
-
     //timer
     m_timer.setText("generalText.ttf", 50.0f);
     m_timer.setTimerUI("timer.png");
 
-    //debug view
-    m_showDebugView = false;
-
     //enemies
     m_enemies.loadEnemies("green-enemy.png", "blue-enemy.png", "pink-enemy.png");
+
+    //debug view
+    m_showDebugView = false;
 
     //magic wand cursor 
     cursor.load("magicWand.png");
@@ -71,55 +70,88 @@ void ofApp::setup() {
     m_appMode = CVC::APP_MODE::APP_VIDEO;
     m_appModes.push_back("APP_VIDEO");
     m_appModes.push_back("APP_CAM");
+
+    //setup Arduino
+    // replace the string below with the serial port for your Arduino board
+    // you can get this from the Arduino application (Tools Menu -> Port) 
+    //m_arduino.connect("COM4", 57600);
+    m_arduino.connect(config::ARDUINO_DEVICE_NAME, 57600);
+
+    flexVal = 0.0f;
+    mode = 0.0f;		// what colour the led lights are
+
+
+    // Listen for EInitialized notification. this indicates that
+    // the arduino is ready to receive commands and it is safe to
+    // call setupArduino()
+    ofAddListener(m_arduino.EInitialized, this, &ofApp::setupArduino);
+
+    m_bSetup = false;
+    flexMode = false;
+
 }
+
 
 
 //--------------------------------------------------------------
 void ofApp::update() {
+
+    updateArduino();
+
+    
+
     switch (m_appMode) {
     case CVC::APP_MODE::APP_VIDEO: {
         m_videoPlayer.update();
 
-        if (m_videoPlayer.isFrameNew()) {
+        //only process if new frame
+        if (m_videoPlayer.isFrameNew() == true) {
             m_colorImage.setFromPixels(m_videoPlayer.getPixels());
 
-            if (m_videoResolutionConflict) {
+            //resize, if res conflict
+            if (m_videoResolutionConflict == true) {
                 m_colorImage.resize(CVC::VIDEO_WIDTH, CVC::VIDEO_HEIGHT);
-
             }
 
-           // processColor(m_colorImage);
+            // processColor(m_colorImage);
             AutoTrackColor(m_colorImage, pinkRange, greenRange, blueRange);
         }
-    } break;
+    }
+    break;
 
     case CVC::APP_MODE::APP_CAM: {
-        if (!m_camPaused) {
+        if (m_camPaused == false) {
             m_videoGrabber.update();
 
-            if (m_videoGrabber.isFrameNew()) {
+            if (m_videoGrabber.isFrameNew() == true) {
                 m_colorImage.setFromPixels(m_videoGrabber.getPixels());
             }
 
-            if (m_camResolutionConflict) {
+            //resize, if res conflict
+            if (m_camResolutionConflict == true) {
                 m_colorImage.resize(CVC::VIDEO_WIDTH, CVC::VIDEO_HEIGHT);
             }
 
             //processColor(m_colorImage);
             AutoTrackColor(m_colorImage, pinkRange, greenRange, blueRange);
         }
-    } break;
+
+    }
+    break;
     }
 
-    //swing detection logic
+    // Swing detection logic
     if (m_contourFinder.nBlobs > 0) {
-        float currentContourArea = m_contourFinder.blobs[0].area;
+        float currentContourArea = m_contourFinder.blobs[0].area; // Use the first blob for simplicity
 
         if (!m_isSwinging && currentContourArea < m_farThreshold) {
-            m_isSwinging = true; //swing start
+            m_isSwinging = true; // Start the swing
         }
         else if (m_isSwinging && currentContourArea > m_closeThreshold) {
-            m_isSwinging = false; //swing end
+            m_isSwinging = false; // End the swing
+            // Trigger the swing event here
+            //ofDrawBitmapString("SWING DETECTED", ofGetWindowWidth()/2, ofGetWindowHeight() / 2);
+          //  ofLogNotice() << "Swing detected! Playing sound.";
             m_magicSound.play();
 
             // Create a new wave at the blob's position
@@ -151,34 +183,36 @@ void ofApp::update() {
         }
     }
 
-    //update timer
+    // update the timer
     m_timer.update();
 
-    //cursor wand stars
+    //CODE FOR CURSOR WAND STARS
+    //generates the random positions
     float x = ofGetMouseX() + ofRandom(-50, 50);
     float y = ofGetMouseY() + ofRandom(-50, 50);
+    //generates the rndm sizes
     float size = ofRandom(10, 50);
 
+    //puts the new position and sie of the stars inside the vectors
     starPositions.push_back(ofVec2f(x, y));
     starSizes.push_back(size);
 
+    //the 10 determines how many stars you want at a time for more particules do 50 
     if (starPositions.size() > 10) {
+        //removes the position and size of oldest star added in the vecor
+        //deleting it basically
         starPositions.erase(starPositions.begin());
         starSizes.erase(starSizes.begin());
     }
+
     ofLogNotice() << "r: " << static_cast<int>(std::round(m_trackedColor[2] * 255));
     ofLogNotice() << "g: " << static_cast<int>(std::round(m_trackedColor[2] * 255));
     ofLogNotice() << "b: " << static_cast<int>(std::round(m_trackedColor[2] * 255));
-
 }
-
-
 
 
 //--------------------------------------------------------------
 void ofApp::draw() {
-
-
 
     ofPushMatrix();
 
@@ -289,11 +323,23 @@ void ofApp::draw() {
         drawWaves(wave);
     }
 
-                
-
-
-
     ofPopMatrix();
+
+    //enemy showing with flex sensor
+    // Check if the flex sensor value exceeds the threshold
+    if (flexVal > 2) {
+        flexMode = true;
+    }
+    else if (flexVal == 0) {
+        flexMode = false;
+    }
+
+    if (flexMode == true) {
+        m_enemies.enemyActions();
+    }
+
+    ofSetColor(255);
+    ofDrawBitmapString("Flex Value: " + ofToString(flexVal), 20, 20);
 
 }
 
@@ -412,14 +458,12 @@ void ofApp::AutoTrackColor(ofxCvColorImage& image, ColorRange cr1, ColorRange cr
     m_contourFinder.findContours(m_grayscaleDiffImage, m_minArea, m_maxArea, m_numContoursConsidered, false, true);
 }
 
-
-//--------------------------------------------------------------
 void ofApp::drawWaves(const Wave& wave) {
-    
-    
+
+
     ofNoFill();
     ofSetLineWidth(5);
-    
+
     int red = static_cast<int>(std::round(m_trackedColor[0] * 255));
     int green = static_cast<int>(std::round(m_trackedColor[1] * 255));
     int blue = static_cast<int>(std::round(m_trackedColor[2] * 255));
@@ -441,9 +485,9 @@ void ofApp::drawWaves(const Wave& wave) {
     //    ofSetColor(0, 0, 255, wave.opacity); //blue
     //}
     //else {
-     ofSetColor(255, 255, 255, wave.opacity); //default to white
+    ofSetColor(255, 255, 255, wave.opacity); //default to white
     //}
-    
+
 
     //draw the wave circle
    // ofDrawCircle(wave.position, wave.radius);
@@ -455,8 +499,114 @@ void ofApp::drawWaves(const Wave& wave) {
         if (ringRadius <= wave.maxRadius) {
             ofDrawCircle(wave.position, ringRadius);
         }
+
     }
 }
 
 
+//--------------------------------------------------------------
+void ofApp::setupArduino(const int& _version)
+{
+
+    m_bSetup = true;
+
+    // remove listener because we don't need it anymore
+    ofRemoveListener(m_arduino.EInitialized, this, &ofApp::setupArduino);
+
+    // print firmware name and version to the console
+    ofLogNotice() << m_arduino.getFirmwareName();
+    ofLogNotice() << "firmata v" << m_arduino.getMajorFirmwareVersion() << "." << m_arduino.getMinorFirmwareVersion();
+
+    //analog input
+    m_arduino.sendAnalogPinReporting(PIN_ANALOG_INPUT, ARD_ANALOG);
+
+    //digital input
+    m_arduino.sendDigitalPinMode(PIN_BUTTON, ARD_INPUT);
+
+    // Set pin modes digital ouput
+    m_arduino.sendDigitalPinMode(PIN_RED, ARD_PWM); // Red
+    m_arduino.sendDigitalPinMode(PIN_GREEN, ARD_PWM); // Green
+    m_arduino.sendDigitalPinMode(PIN_BLUE, ARD_PWM); // Blue
+
+    m_arduino.sendPwm(PIN_RED, 0);
+    m_arduino.sendPwm(PIN_GREEN, 0);
+    m_arduino.sendPwm(PIN_BLUE, 0);
+
+   // ofAddListener(m_arduino.EDigitalPinChanged, this, &ofApp::digitalPinChanged);
+
+    //PMW/digital output
+    
+
+    ofAddListener(m_arduino.EDigitalPinChanged, this, &ofApp::digitalPinChanged);
+    ofAddListener(m_arduino.EAnalogPinChanged, this, &ofApp::analogPinChanged);
+
+    //initialization
+   
+}
+
+
+void ofApp::updateArduino() {
+
+    m_arduino.update();
+
+    
+}
+
+void ofApp::analogPinChanged(const int& pinNum) {
+    cout << "analog pin: " + ofToString(pinNum) + " : " + ofToString(m_arduino.getAnalog(pinNum)) << std::endl;
+    if (pinNum == PIN_ANALOG_INPUT) {
+
+        //get analog value
+        flexVal = m_arduino.getAnalog(pinNum);
+        flexVal = (int)ofMap(flexVal, 0, 1023, 0, 255);
+
+
+    }
+}
+
+void ofApp::digitalPinChanged(const int& pinNum) {
+     
+    cout << "digital pin: " + ofToString(pinNum) + " : " + ofToString(m_arduino.getDigital(pinNum)) << std::endl;
+   // mode = m_arduino.getDigital(pinNum);
+
+    switch (mode) {
+        //off
+    case 0:
+        m_arduino.sendPwm(PIN_RED, 0); //red
+        m_arduino.sendPwm(PIN_GREEN, 0); //green
+        m_arduino.sendPwm(PIN_BLUE, 0); //blue
+        break;
+        //green
+    case 1:
+        m_arduino.sendPwm(PIN_RED, 0);
+        m_arduino.sendPwm(PIN_GREEN, 255);
+        m_arduino.sendPwm(PIN_BLUE, 0);
+        break;
+        // blue
+    case 2:
+        m_arduino.sendPwm(PIN_RED, 0);
+        m_arduino.sendPwm(PIN_GREEN, 0);
+        m_arduino.sendPwm(PIN_BLUE, 255);
+        break;
+        //pink
+    case 3:
+        m_arduino.sendPwm(PIN_RED, 255);
+        m_arduino.sendPwm(PIN_GREEN, 20);
+        m_arduino.sendPwm(PIN_BLUE, 50);
+        break;
+    default:
+        m_arduino.sendPwm(PIN_RED, 0);
+        m_arduino.sendPwm(PIN_GREEN, 0);
+        m_arduino.sendPwm(PIN_BLUE, 0);
+        break;
+    }
+   
+
+
+    if (pinNum == PIN_BUTTON ) {//&& m_arduino.getDigital(pinNum) == ARD_LOW) {
+        mode++;
+        if (mode > 3) mode = 0;
+
+    }
+}
 
