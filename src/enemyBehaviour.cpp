@@ -13,9 +13,10 @@ void EnemyBehaviour::setup()
 
 void EnemyBehaviour::loadEnemies(string enemy1, string enemy2, string enemy3)
 {
-    enemies[0].load(enemy1);
-    enemies[1].load(enemy2);
-    enemies[2].load(enemy3);
+    enemies[0].load(enemy1); //green
+    enemies[1].load(enemy2); //blue
+    enemies[2].load(enemy3); //pink
+    //colour positions depend on what order the images are passed into the function but in this case, this is the order we loaded them
 }
 
 void EnemyBehaviour::loadScoreText(string textPath, int size)
