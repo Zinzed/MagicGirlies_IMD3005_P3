@@ -550,6 +550,41 @@ void ofApp::mousePressed(int x, int y, int button) {
         m_trackedColor[1] = m_colorImage.getPixels()[index + 1] / 255.0f;       //green
         m_trackedColor[2] = m_colorImage.getPixels()[index + 2] / 255.0f;       //blue
     }
+
+    //button logic
+    if (m_startBB.inside(x, y) || m_startAltBB.inside(x, y))
+    {
+        m_buttonClick.play();
+        m_showStart = false;
+        m_showInstruc = false;
+        m_showInstrucP2 = false;
+        m_playGPMus = true;
+        m_showEnd = false;
+    }
+    else if (m_instrucBB.inside(x, y) || m_backBB.inside(x, y))
+    {
+        m_buttonClick.play();
+        m_showInstruc = true;
+        m_showStart = false;
+        m_showInstrucP2 = false;
+        m_showEnd = false;
+    }
+    else if (m_nextBB.inside(x, y))
+    {
+        m_buttonClick.play();
+        m_showInstruc = false;
+        m_showStart = false;
+        m_showInstrucP2 = true;
+        m_showEnd = false;
+    }
+    else if (m_restartBB.inside(x, y))
+    {
+        m_buttonClick.play();
+        m_showInstruc = false;
+        m_showStart = true;
+        m_showInstrucP2 = false;
+        m_showEnd = false;
+    }
 }
 
 void ofApp::AutoTrackColor(ofxCvColorImage& image, ColorRange cr1, ColorRange cr2, ColorRange cr3) {
@@ -610,40 +645,6 @@ void ofApp::AutoTrackColor(ofxCvColorImage& image, ColorRange cr1, ColorRange cr
     //find contours/blobs
     m_contourFinder.findContours(m_grayscaleDiffImage, m_minArea, m_maxArea, m_numContoursConsidered, false, true);
 
-    //button logic
-    if (m_startBB.inside(x, y) || m_startAltBB.inside(x, y))
-    {
-        m_buttonClick.play();
-        m_showStart = false;
-        m_showInstruc = false;
-        m_showInstrucP2 = false;
-        m_playGPMus = true;
-        m_showEnd = false;
-    }
-    else if (m_instrucBB.inside(x, y) || m_backBB.inside(x, y))
-    {
-        m_buttonClick.play();
-        m_showInstruc = true;
-        m_showStart = false;
-        m_showInstrucP2 = false;
-        m_showEnd = false;
-    }
-    else if (m_nextBB.inside(x, y))
-    {
-        m_buttonClick.play();
-        m_showInstruc = false;
-        m_showStart = false;
-        m_showInstrucP2 = true;
-        m_showEnd = false;
-    }
-    else if (m_restartBB.inside(x, y))
-    {
-        m_buttonClick.play();
-        m_showInstruc = false;
-        m_showStart = true;
-        m_showInstrucP2 = false;
-        m_showEnd = false;
-    }
 }
 
 void ofApp::drawWaves(const Wave& wave) {
