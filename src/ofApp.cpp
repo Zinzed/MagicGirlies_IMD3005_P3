@@ -39,6 +39,7 @@ void ofApp::setup() {
 
     //sfx
     m_magicSound.load("magic-spell.mp3");
+    m_buttonClick.load("buttonClick.mp3");
 
     //wave effect
     waveInterval = 500;  // Time between waves in milliseconds
